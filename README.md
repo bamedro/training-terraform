@@ -60,6 +60,15 @@ L'état actuel de l'infrastructure, vu par Terraform, se trouve désormais dans 
 
 Nous allons maintenant ajouter un bastion à l'infrastructure en modifiant le modèle décrit par notre manifest Terraform.
 
+## Générer la clé SSH pour le bastion
+
+On doit générer une clé SSH pour pouvoir se connecter au bastion. On va en profiter pour utiliser un algorithme de chiffrement plus récent que RSA, selon les nouvelles recommandations en termes de sécurité.
+Par ailleurs, les clés ED25519 sont plus petites que les clés RSA, tout en offrant une meilleure sécurité. Le chiffrement et le déchiffrement sont aussi plus rapides et donc moins coûteux en ressources.
+
+```bash
+ssh-keygen -t ed25519
+```
+
 ## Ajout du bastion dans le fichier main.tf
 Indiquer `bastion = 1` dans le bloc `locals` du fichier `main.tf` et observer comment cette variable est utilisée dans la section *Création d'un bastion*, à la fin du fichier `main.tf`.
 

@@ -6,7 +6,7 @@
 #     key            = "state/terraform.tfstate"
 #     region         = "eu-west-1"
 #     encrypt        = true
-#     kms_key_id     = "alias/tfstate-bucket-key"
+#     kms_key_id     = "alias/tfstate-falkenmaze83-bucket-key"
 #     dynamodb_table = "tfstate-falkenmaze83"
 #   }
 # }
@@ -49,13 +49,11 @@ provider "aws" {
 resource "aws_kms_key" "tfstate-bucket-key" {
  description             = "This key is used to encrypt bucket objects"
  deletion_window_in_days = 10
- enable_key_rotation     = true
-
- 
+ enable_key_rotation     = true 
 }
 
 resource "aws_kms_alias" "key-alias" {
- name          = "alias/tfstate-bucket-key"
+ name          = "alias/tfstate-${var.platform_code}-bucket-key"
  target_key_id = aws_kms_key.tfstate-bucket-key.key_id
 }
 
@@ -190,6 +188,7 @@ resource "aws_network_interface" "bastion" {
   count = local.bastion
   subnet_id   = aws_subnet.public.id
   private_ips = [cidrhost(aws_subnet.public.cidr_block, 10+count.index)]
+  security_groups = [aws_security_group.ssh.id]
 
   tags = { Name = "bastion-${local.stack_name}" }
 }
