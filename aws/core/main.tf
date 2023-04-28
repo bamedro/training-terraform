@@ -1,14 +1,14 @@
 ## Don't forget to update bucket name and dynamodb table
 ## name with your own platform_code
 # terraform {
-#  backend "s3" {
-#    bucket         = "tfstate-falkenmaze83"
-#    key            = "state/terraform.tfstate"
-#    region         = "eu-west-1"
-#    encrypt        = true
-#    kms_key_id     = "alias/tfstate-bucket-key"
-#    dynamodb_table = "tfstate-falkenmaze83"
-#  }
+#   backend "s3" {
+#     bucket         = "tfstate-falkenmaze83"
+#     key            = "state/terraform.tfstate"
+#     region         = "eu-west-1"
+#     encrypt        = true
+#     kms_key_id     = "alias/tfstate-bucket-key"
+#     dynamodb_table = "tfstate-falkenmaze83"
+#   }
 # }
 
 locals {
@@ -35,6 +35,7 @@ provider "aws" {
 
   default_tags {
     tags = {
+      Name            = local.stack_name
       PlatformCode    = var.platform_code
       Environment     = var.environment
       Terraform       = "true"
@@ -49,6 +50,8 @@ resource "aws_kms_key" "tfstate-bucket-key" {
  description             = "This key is used to encrypt bucket objects"
  deletion_window_in_days = 10
  enable_key_rotation     = true
+
+ 
 }
 
 resource "aws_kms_alias" "key-alias" {
@@ -57,20 +60,22 @@ resource "aws_kms_alias" "key-alias" {
 }
 
 resource "aws_s3_bucket" "tfstate" {
- bucket = "tfstate-${var.platform_code}"
+  bucket = "tfstate-${var.platform_code}"
 
- server_side_encryption_configuration {
-   rule {
-     apply_server_side_encryption_by_default {
-       kms_master_key_id = aws_kms_key.tfstate-bucket-key.arn
-       sse_algorithm     = "aws:kms"
-     }
-   }
- }
+  ## Uncomment the force_destroy below to allow Terraform destroy
+  ## this bucket, even if it still contains objects (state file)
+  # force_destroy = true
+}
 
- ## Uncomment the force_destroy below to allow Terraform destroy
- ## this bucket, even if it still contains objects (state file)
- # force_destroy: true
+resource "aws_s3_bucket_server_side_encryption_configuration" "tfstate" {
+  bucket = aws_s3_bucket.tfstate.id
+
+  rule {
+    apply_server_side_encryption_by_default {
+      kms_master_key_id = aws_kms_key.tfstate-bucket-key.arn
+      sse_algorithm     = "aws:kms"
+    }
+  }
 }
 
 resource "aws_s3_bucket_ownership_controls" "tfstate" {
@@ -118,25 +123,34 @@ resource "aws_dynamodb_table" "tfstate" {
 ####
 #### Création et configuration d'un VPC
 ####
-resource "aws_vpc" "ldz_vpc" {
+resource "aws_vpc" "ldz" {
   cidr_block = "172.16.0.0/16"
 
-  tags = {
-    Name = "${local.stack_name}-vpc"
+  tags = { Name = "${local.stack_name}-vpc" }
+}
+
+resource "aws_subnet" "public" {
+  vpc_id            = aws_vpc.ldz.id
+  cidr_block        = cidrsubnet(aws_vpc.ldz.cidr_block, 8, 1)
+
+  tags = { Name = "public-${local.stack_name}" }
+}
+
+resource "aws_internet_gateway" "ldz" {
+  vpc_id = aws_vpc.ldz.id
+}
+
+resource "aws_route_table" "ldz" {
+  vpc_id = aws_vpc.ldz.id
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.ldz.id
   }
 }
 
-resource "aws_subnet" "ldz_subnet" {
-  vpc_id            = aws_vpc.ldz_vpc.id
-  cidr_block        = cidrsubnet(aws_vpc.ldz_vpc.cidr_block, 8, 1)
-
-  tags = {
-    Name = "${local.stack_name}-subnet"
-  }
-}
-
-resource "aws_internet_gateway" "igw" {
-  vpc_id = aws_vpc.ldz_vpc.id
+resource "aws_main_route_table_association" "ldz" {
+  vpc_id         = aws_vpc.ldz.id
+  route_table_id = aws_route_table.ldz.id
 }
 
 ####
@@ -159,39 +173,33 @@ resource "aws_instance" "bastion" {
   }
 
   tags = {
-    Name = "bastion-${local.stack_name}-ec2"
+    Name = "bastion-${local.stack_name}"
   }
 }
 
-resource "aws_eip" "ldz_bastion_eip" {
-  for_each = aws_instance.bastion
-  instance = each.value.id
+resource "aws_eip" "bastion" {
+  count = local.bastion
+  instance = aws_instance.bastion[0].id
   vpc      = true
-  depends_on = [aws_internet_gateway.igw]
+  depends_on = [aws_internet_gateway.ldz]
 
-  tags = {
-    Name = "bastion-${local.stack_name}-eip"
-  }
+  tags = { Name = "bastion-${local.stack_name}" }
 }
 
 resource "aws_network_interface" "bastion" {
-  for_each = aws_instance.bastion
-  subnet_id   = aws_subnet.ldz_subnet.id
-  # private_ips = [cidrhost(aws_subnet.ldz_subnet.cidr_block, 10+each.key)]
+  count = local.bastion
+  subnet_id   = aws_subnet.public.id
+  private_ips = [cidrhost(aws_subnet.public.cidr_block, 10+count.index)]
 
-  tags = {
-    Name = "bastion-${local.stack_name}-nic"
-  }
+  tags = { Name = "bastion-${local.stack_name}" }
 }
 
 resource "aws_security_group" "ssh" {
   name = "allow-all-ssh-${local.stack_name}-sg"
   description = "Allow SSH Connection from anywhere"
-  vpc_id = aws_vpc.ldz_vpc.id
+  vpc_id = aws_vpc.ldz.id
 
-  tags = {
-    Name = "allow-all-ssh-${local.stack_name}-sg"
-  }
+  tags = { Name = "allow-all-ssh-${local.stack_name}" }
 }
 
 resource "aws_vpc_security_group_egress_rule" "ssh" {
@@ -205,14 +213,14 @@ resource "aws_vpc_security_group_ingress_rule" "ssh" {
   security_group_id = aws_security_group.ssh.id
   description = "Allow any incoming SSH connections"
   cidr_ipv4 = "0.0.0.0/0"
-  from_port = ""
+  from_port = "22"
   to_port = "22"
   ip_protocol = "tcp"
 }
 
 resource "aws_key_pair" "ssh" {
   key_name   = "deployer-${local.stack_name}-sshkey"
-  public_key = file("~/id_ed25519.pub")
+  public_key = file("~/.ssh/id_ed25519.pub")
 }
 
 data "aws_ami" "ubuntu" {
