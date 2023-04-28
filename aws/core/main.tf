@@ -142,35 +142,15 @@ resource "aws_internet_gateway" "igw" {
 ####
 #### Création d'un bastion
 ####
-resource "aws_eip" "ldz_bastion_eip" {
-  count = local.bastion
-  instance = aws_instance.bastion[0].id
-  vpc      = true
-  depends_on = [aws_internet_gateway.igw]
-
-  tags = {
-    Name = "bastion-${local.stack_name}-eip"
-  }
-}
-
-resource "aws_network_interface" "bastion" {
-  count = local.bastion
-  subnet_id   = aws_subnet.ldz_subnet.id
-  private_ips = [cidrhost(aws_subnet.ldz_subnet.cidr_block, 10)]
-
-  tags = {
-    Name = "bastion-${local.stack_name}-nic"
-  }
-}
-
 resource "aws_instance" "bastion" {
   count = local.bastion
 
   ami           = data.aws_ami.ubuntu.id # cf. data block below
   instance_type = "t2.micro"
+  key_name      = aws_key_pair.ssh.key_name
 
   network_interface {
-    network_interface_id = aws_network_interface.bastion[0].id
+    network_interface_id = aws_network_interface.bastion[count.index].id
     device_index         = 0
   }
 
@@ -181,6 +161,58 @@ resource "aws_instance" "bastion" {
   tags = {
     Name = "bastion-${local.stack_name}-ec2"
   }
+}
+
+resource "aws_eip" "ldz_bastion_eip" {
+  for_each = aws_instance.bastion
+  instance = each.value.id
+  vpc      = true
+  depends_on = [aws_internet_gateway.igw]
+
+  tags = {
+    Name = "bastion-${local.stack_name}-eip"
+  }
+}
+
+resource "aws_network_interface" "bastion" {
+  for_each = aws_instance.bastion
+  subnet_id   = aws_subnet.ldz_subnet.id
+  # private_ips = [cidrhost(aws_subnet.ldz_subnet.cidr_block, 10+each.key)]
+
+  tags = {
+    Name = "bastion-${local.stack_name}-nic"
+  }
+}
+
+resource "aws_security_group" "ssh" {
+  name = "allow-all-ssh-${local.stack_name}-sg"
+  description = "Allow SSH Connection from anywhere"
+  vpc_id = aws_vpc.ldz_vpc.id
+
+  tags = {
+    Name = "allow-all-ssh-${local.stack_name}-sg"
+  }
+}
+
+resource "aws_vpc_security_group_egress_rule" "ssh" {
+  security_group_id = aws_security_group.ssh.id
+  description = "Allow all outgoing connections"
+  cidr_ipv4 = "0.0.0.0/0"
+  ip_protocol = "-1"
+}
+
+resource "aws_vpc_security_group_ingress_rule" "ssh" {
+  security_group_id = aws_security_group.ssh.id
+  description = "Allow any incoming SSH connections"
+  cidr_ipv4 = "0.0.0.0/0"
+  from_port = ""
+  to_port = "22"
+  ip_protocol = "tcp"
+}
+
+resource "aws_key_pair" "ssh" {
+  key_name   = "deployer-${local.stack_name}-sshkey"
+  public_key = file("~/id_ed25519.pub")
 }
 
 data "aws_ami" "ubuntu" {
