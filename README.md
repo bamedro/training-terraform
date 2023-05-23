@@ -20,66 +20,77 @@ Exercices pratiques
 
 # Exercice 1 : Initialiser et déployer un projet Terraform
 
-Se rendre dans le répertoire du `core` du cloud choisit (azure ou aws) et se connecter à l'environnement Cloud (facultatif si vous utilisez un Cloud Shell).
+Se rendre dans le répertoire au cloud utilisé (azure ou aws) et se connecter à l'environnement Cloud (facultatif si vous utilisez un Cloud Shell).
 
-## Définir les paramètres du projet
-
-Ouvrir le fichier  `test.auto.tfvars`.
-Ce fichier contient une liste de variables qui seront utilisées pour paramétrer le déploiement que nous allons réaliser.
-
-Mettre à jour uniquement la valeur de la variable `platform_code` avec un identifiant unique tel que votre prénom (sans accent).
+Ouvrir et observer le contenu des fichiers présents dans le répertoire :
+- dev.tfvars
+- main.tf
+- output.tf
+- variables.tf
+- terraform.tf
 
 ## Initialiser le projet Terraform
 
-Cette étape va télécharger les plugins nécessaires à l'exécution du projet (en se basant sur la section `required_providers` du fichier `main.tf`).
+Cette étape va télécharger les plugins nécessaires à l'exécution du projet (en se basant sur la section `required_providers` du fichier `terraform.tf`).
 
 ```bash
 terraform init
 ```
 
-## Vérifier le plan d'exécution
-
-Cette étape va afficher les actions qui seront réalisées par Terraform pour déployer l'infrastructure.
+Créer ensuite un espace de travail (Workspace) Terraform pour le projet. Cela permet de gérer plusieurs environnements (dev, test, prod, etc.) avec le même manifest Terraform. Chaque Workspace a son propre fichier Terraform State.
+Donner un nom unique à ce workspace, par exemple `tictactoedev` pour un environnement de développement.
 
 ```bash
-terraform plan
+terraform workspace new tictactoedev
+```
+
+## Préparer et visualiser le plan d'exécution
+
+Cette étape va afficher les actions qui seront réalisées par Terraform pour déployer l'infrastructure.
+Nous utilisons le fichier `dev.tfvars` pour fournir les valeurs des variables du manifest Terraform. Pour un autre environnement, nous pourrions utiliser un autre fichier de variables.
+Il est également possible d'utiliser des variables d'environnement ou de passer les valeurs directement en ligne de commande.
+
+```bash
+terraform plan -var-file="dev.tfvars"
 ```
 
 ## Déployer l'infrastructure
 
-Cette étape va déployer l'infrastructure sur le cloud.
+Cette étape va déployer l'infrastructure décrite dans le manifest Terraform. (Répondre "yes" à la question posée par Terraform)
 
 ```bash
-terraform apply
+terraform apply -var-file="dev.tfvars"
 ```
+
+Constater la création des fichiers tels que décrit par le manifest Terraform, ainsi que la section finale `Outputs`, en résultat de la commande `terraform apply`.
+L'état actuel de l'infrastructure, vu par Terraform, se trouve désormais dans le fichier `terraform.tfstate` (localiser le fichier et regarder son contenu).
 
 
 # Exercice 2 : Mettre à jour une infrastructure Terraform
 
-L'état actuel de l'infrastructure, vu par Terraform, se trouve désormais dans le fichier `terraform.tfstate`.
+Nous allons maintenant ajouter des composants d'infrastructure Cloud en mettant à jour le modèle décrit par notre manifest Terraform.
+Pour cela, nous allons utiliser les modules Terraform.
+Les modules permettent de réutiliser du code Terraform, en encapsulant des ressources et des variables dans un module réutilisable.
 
-Nous allons maintenant ajouter un bastion à l'infrastructure en modifiant le modèle décrit par notre manifest Terraform.
+Toujours dans le fichier `main.tf`, décommenter les sections `module` :
+- tf_backend
+- vnet ou vpc (selon le cloud utilisé)
+
+Observer, dans les répertoires `modules` les définitions des modules utilisés.
+
+## Déployer les deux nouveaux modules
+
+Initialiser les nouveaux modules, et déployer la mise à jour de l'infrastructure :
+
+```bash
+terraform init
+terraform apply -var-file="dev.tfvars"
+```
 
 ## Générer la clé SSH pour le bastion
 
 On doit générer une clé SSH pour pouvoir se connecter au bastion. On va en profiter pour utiliser un algorithme de chiffrement plus récent que RSA, selon les nouvelles recommandations en termes de sécurité.
-Par ailleurs, les clés ED25519 sont plus petites que les clés RSA, tout en offrant une meilleure sécurité. Le chiffrement et le déchiffrement sont aussi plus rapides et donc moins coûteux en ressources.
-
-```bash
-ssh-keygen -t ed25519
-```
-
-## Ajout du bastion dans le fichier main.tf
-Indiquer `bastion = 1` dans le bloc `locals` du fichier `main.tf` et observer comment cette variable est utilisée dans la section *Création d'un bastion*, à la fin du fichier `main.tf`.
-
-## Utilisation des valeurs de sortie du fichier outputs.tf
-Décommenter la section `output` du fichier `outputs.tf`.
-
-## Appliquer les modifications sur l'infrastructure
-
-```bash
-terraform apply
-```
+Les clés ED25519 sont plus petites que les clés RSA, tout en offrant une meilleure sécurité. Le chiffrement et le déchiffrement sont aussi plus rapides et donc moins coûteux en ressources.
 
 # Exercice 3 : Travailler avec un backend remote
 
@@ -101,27 +112,22 @@ Relancer la commande :
 
 ... et accepter la copie du fichier local vers le backend remote.
 
-Désormais, le fichier Terraform State est stocké sur le backend remote tel que configuré dans le block `terraform {...}` fu fichier `main.tf`.
+Désormais, le fichier Terraform State est stocké sur le backend remote tel que configuré dans le block `terraform {...}` fu fichier `terraform.tf`.
 
 ## Lecture du fichier Terraform State sur le backend remote
-Lire la valeur de la variable de sortie `bastion_public_ip` depuis le backend remote, grâce à la commande suivante :
+Lire la valeur de la variable de sortie `public_bastion_ip` depuis le backend remote.
+Pour cela, on peut tester les différentes commande suivante :
 
 ```bash
-terraform output bastion_public_ip
+terraform output public_bastion_ip
+terraform output -json public_bastion_ip
+terraform output -raw public_bastion_ip
 ```
 
 # Exercice 4 : Détruire une infrastructure Terraform
 
-Terraform peut détruire l'infrastructure qu'il a déployé. Cependant, certaines ressources comme le stockage des fichiers Terraform State ne sont pas détruites dans la configuration par défaut, il faut donc passer par une étape de préparation à la destruction.
-
-Pour cela, décommenter la ligne indiquée dans le bloc en charge de la gestion du stockage (dans le fichier `main.tf`), puis appliquer ces modifications à l'infrastructure :
+Terraform peut détruire l'infrastructure qu'il a déployé. Cependant, certaines ressources comme le stockage des fichiers Terraform State ne sont pas détruites dans la configuration par défaut, il faut donc parfois passer par une étape de préparation à la destruction.
 
 ```bash
-terraform apply
-```
-
-Enfin, pour détruire l'infrastructure, il suffit d'exécuter la commande suivante :
-
-```bash
-terraform destroy
+terraform destroy -var-file="dev.tfvars"
 ```
