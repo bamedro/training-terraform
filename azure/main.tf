@@ -44,19 +44,19 @@ resource "azurerm_resource_group" "core" {
   tags = local.default_tags
 }
 
-module "tf_backend" {
-    source = "../modules/azure/tf_backend"
-    # source = "github.com/bamedro/training-terraform/modules/azure/tf_backend"
-    resource_group = azurerm_resource_group.core.name
-    platform_code = local.platform.platform_code
-    storage_replication_type = "LRS"
-    default_tags = local.default_tags
-}
+# module "tf_backend" {
+#     source = "../modules/azure/tf_backend"
+#     # source = "github.com/bamedro/training-terraform/modules/azure/tf_backend"
+#     resource_group = azurerm_resource_group.core.name
+#     platform_code = local.platform.platform_code
+#     storage_replication_type = "LRS"
+#     default_tags = local.default_tags
+# }
 
-module "vnet" {
-    source = "../modules/azure/vnet"
-    resource_group = azurerm_resource_group.core.name
-    platform_code = local.platform.platform_code
-    cidr_block = "172.10.0.0/16"
-    default_tags = local.default_tags
-}
+# module "vnet" {
+#     source = "../modules/azure/vnet"
+#     resource_group = azurerm_resource_group.core.name
+#     platform_code = local.platform.platform_code
+#     cidr_block = "172.10.0.0/16"
+#     default_tags = local.default_tags
+# }
