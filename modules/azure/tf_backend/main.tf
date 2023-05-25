@@ -3,7 +3,7 @@
 #### et production du fichier de config Terraform correspondant
 ####
 resource "azurerm_storage_account" "tfbackend" {
-  name                      = "${var.platform_code}tfbackend"
+  name                      = "${var.platform_code}4tfbackend"
   resource_group_name       = var.resource_group
   location                  = var.location
   account_tier              = "Standard"

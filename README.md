@@ -1,5 +1,7 @@
 Installation de Terraform avec TFEnv (recommandé)
 ==================================================
+*Note*: Si Terraform est déjà installé, comme sur certain cloud shells, vous pouvez passer cette étape.
+
 Si Terraform n'est pas présent sur la machine, il faut l'installer.
 TFEnv est un outil qui permet d'installer et de gérer plusieurs versions de Terraform sur une même machine.
 Il va télécharger les binaires de Terraform depuis le site officiel et les stocker dans le répertoire `~/.tfenv/versions/`.
@@ -38,7 +40,11 @@ terraform init
 ```
 
 Créer ensuite un espace de travail (Workspace) Terraform pour le projet. Cela permet de gérer plusieurs environnements (dev, test, prod, etc.) avec le même manifest Terraform. Chaque Workspace a son propre fichier Terraform State.
-Donner un nom unique à ce workspace, par exemple `tictactoedev` pour un environnement de développement.
+Ce nom peut par exemple se composer du nom de l'application et de l'environnement de cible.
+Exemple : tictactoedev (ne pas réutiliser ce nom !)
+
+*Remarque importante :*
+Par la suite, le nom de ce workspace sera réutilisé pour créer un espace de stockage dont le nom doit être globalement unique et composé uniquement de caractères alphanumériques minuscules. Pour garantir l'unicité, vous pouvez utiliser votre prénom comme nom d'application
 
 ```bash
 terraform workspace new tictactoedev
@@ -87,11 +93,6 @@ terraform init
 terraform apply -var-file="dev.tfvars"
 ```
 
-## Générer la clé SSH pour le bastion
-
-On doit générer une clé SSH pour pouvoir se connecter au bastion. On va en profiter pour utiliser un algorithme de chiffrement plus récent que RSA, selon les nouvelles recommandations en termes de sécurité.
-Les clés ED25519 sont plus petites que les clés RSA, tout en offrant une meilleure sécurité. Le chiffrement et le déchiffrement sont aussi plus rapides et donc moins coûteux en ressources.
-
 # Exercice 3 : Travailler avec un backend remote
 
 Il est possible (et souvent recommandé) d'héberger le fichier Terraform State sur l'infrastructure cloud. Cela offre plusieurs avantages, notamment :
@@ -115,16 +116,36 @@ Relancer la commande :
 Désormais, le fichier Terraform State est stocké sur le backend remote tel que configuré dans le block `terraform {...}` fu fichier `terraform.tf`.
 
 ## Lecture du fichier Terraform State sur le backend remote
-Lire la valeur de la variable de sortie `public_bastion_ip` depuis le backend remote.
+Lire les variables de sortie depuis le backend remote.
 Pour cela, on peut tester les différentes commande suivante :
 
 ```bash
-terraform output public_bastion_ip
-terraform output -json public_bastion_ip
-terraform output -raw public_bastion_ip
+terraform output
+terraform output tf_backend_storage_name
+terraform output -raw tf_backend_storage_name
 ```
 
-# Exercice 4 : Détruire une infrastructure Terraform
+# Exercice 4 : Ajouter une machine virtuelle au réseau existant
+
+L'objectif de cette étape est de modifier le manifest Terraform pour ajouter une machine virtuelle au sous-réseau existant, qui a été construit dans l'exercice 2. Pour cela, il convient d'ajouter les ressources nécessaires dans le fichier `main.tf` du module racine.
+
+## Cas d'Azure
+Pour Azure, il faut ajouter deux ressources :
+- `azurerm_virtual_machine`
+- `azurerm_network_interface`
+Documentation de référence : https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/linux_virtual_machine
+az vm image list -p canonical -l francecentral --architecture x64
+
+## Cas d'AWS
+Pour AWS, il faut ajouter deux ressources et une datasource :
+- `aws_instance`
+- `aws_network_interface`
+- `aws_ami`
+Documentation de référence : https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/instance
+
+
+
+# Exercice 5 : Détruire une infrastructure Terraform
 
 Terraform peut détruire l'infrastructure qu'il a déployé. Cependant, certaines ressources comme le stockage des fichiers Terraform State ne sont pas détruites dans la configuration par défaut, il faut donc parfois passer par une étape de préparation à la destruction.
 

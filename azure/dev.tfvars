@@ -1,2 +1,2 @@
 environment = "TEST"
-location = "westeurope"
+location = "francecentral"

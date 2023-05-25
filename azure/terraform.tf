@@ -1,10 +1,10 @@
 ## Don't forget to update names below with your own values
 # terraform {
 #   backend "azurerm" {
-#     resource_group_name  = "votrenom1234-core-config"
-#     storage_account_name = "votrenom1234"
+#     resource_group_name  = "briandev-core-rg"
+#     storage_account_name = "briandev4tfbackend"
 #     container_name       = "tfstates"
-#     key                  = "core.votrenom1234.terraform.tfstate"
+#     key                  = "core.briandev.terraform.tfstate"
 #   }
 # }
 
@@ -21,7 +21,18 @@ terraform {
   }
 }
 
-# Configure the Microsoft Azure Provider
+## Configure the Microsoft Azure Provider
+## https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/guides/features-block
 provider "azurerm" {
-  features {}
+  features {
+    resource_group {
+      prevent_deletion_if_contains_resources = true
+    }
+
+    virtual_machine {
+      delete_os_disk_on_deletion     = true
+      graceful_shutdown              = false
+      skip_shutdown_and_force_delete = false
+    }
+  }
 }
