@@ -72,22 +72,3 @@ resource "aws_dynamodb_table" "tfstate" {
    type = "S"
  }
 }
-
-resource "local_file" "backend_config" {
-    filename = "terraform-backend.tf"
-    file_permission = "0640"
-    content = templatefile(
-        "${path.module}/Technical_Architecture_Document.md.tftpl",
-        { platform = local.platform})
-}
-
-# terraform {
-#   backend "s3" {
-#     bucket         = "tfstate-falkenmaze83"
-#     key            = "state/terraform.tfstate"
-#     region         = "eu-west-1"
-#     encrypt        = true
-#     kms_key_id     = "alias/tfstate-falkenmaze83-bucket-key"
-#     dynamodb_table = "tfstate-falkenmaze83"
-#   }
-# }
