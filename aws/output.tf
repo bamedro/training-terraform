@@ -3,5 +3,5 @@ output "instance_name" {
 }
 
 # output "tfstate_bucket_name" {
-#   value = "${module.tfstate_bucket.bucket_name}"
+#   value = "${module.tf_backend.bucket_name}"
 # }
