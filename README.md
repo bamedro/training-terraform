@@ -1,9 +1,21 @@
-Installation de Terraform avec TFEnv (recommandé)
-==================================================
-*Note*: Si Terraform est déjà installé, comme sur certain cloud shells, vous pouvez passer cette étape.
+Exercices pratiques
+=====================
 
-Si Terraform n'est pas présent sur la machine, il faut l'installer.
-TFEnv est un outil qui permet d'installer et de gérer plusieurs versions de Terraform sur une même machine.
+# Préparation
+
+## Choix et initialisation de l'environnement 
+Terraform s'utilise depuis une *console*, avec des commandes Shell.
+Ainsi, la méthode la plus simple est d'ouvrir un Cloud Shell sur le cloud utilisé.
+Il est également possible d'utiliser une console sur sa machine locale, connectée au cloud.
+
+Cloner ce dépôt sur votre environnement (Cloud Shell ou machine locale) et se rendre dans le répertoire du cloud utilisé (./azure ou ./aws)
+```
+git clone https://github.com/bamedro/training-terraform
+cd training-terraform/aws_ou_azure
+```
+
+## Installer Terraform avec TFEnv (recommandé)
+TFEnv est un utilitaire qui permet de travailler avec plusieurs versions de Terraform, ce qui est parfois nécessaire lorsque l'on maintien des projets Terraform réalisés à différents moments.
 Il va télécharger les binaires de Terraform depuis le site officiel et les stocker dans le répertoire `~/.tfenv/versions/`.
 La commande tfenv permet de gérer les versions de Terraform installées sur la machine.
 
@@ -12,17 +24,16 @@ Pour installer TFEnv, il faut exécuter les commandes suivantes :
 ```bash
 git clone https://github.com/tfutils/tfenv.git ~/.tfenv
 mkdir ~/bin
-ln -s ~/.tfenv/bin/* ~/bin/
-tfenv install
-tfenv use 1.4.6  # Indiquer la version installée
+ln -s ~/.tfenv/bin/* ~/bin/     # Mettre à jour sa variable PATH si besoin
 ```
 
-Exercices pratiques
-=====================
+S'assurer de bien être dans le répertoire ./azure ou ./aws et installer lancer l'installation de Terraform via la command `tfenv`.
+Cette commande va consulter le fichier `.terraform-version` présent à la raçine du dépôt pour installer la bonne version de Terraform. 
+```
+tfenv install
+```
 
 # Exercice 1 : Initialiser et déployer un projet Terraform
-
-Se rendre dans le répertoire au cloud utilisé (azure ou aws) et se connecter à l'environnement Cloud (facultatif si vous utilisez un Cloud Shell).
 
 Ouvrir et observer le contenu des fichiers présents dans le répertoire :
 - dev.tfvars
