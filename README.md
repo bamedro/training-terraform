@@ -32,7 +32,13 @@ Cette commande va consulter le fichier `.terraform-version` présent à la raçi
 tfenv install
 ```
 
+Les commandes `which terraform` puis `terraform version` permettent respectivement de vérifier l'origin du binaire utilisé et la version effectivement utilisée pour Terraform.
+
+
 # Exercice 1 : Initialiser et déployer un projet Terraform
+
+Depuis la raçine du dépôt, se rendre dans répertoire correspondant au cloud utilisé (./azure ou ./aws).
+Ce répertoire deviendra le *root module* de Terraform.
 
 Ouvrir et observer le contenu des fichiers présents dans le répertoire :
 - dev.tfvars
