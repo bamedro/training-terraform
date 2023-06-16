@@ -98,7 +98,7 @@ Toujours dans le fichier `main.tf`, décommenter les sections `module` :
 - tf_backend
 - vnet ou vpc (selon le cloud utilisé)
 
-Observer, dans les répertoires `modules` les définitions des modules utilisés.
+Ces sections référencent des modules existants que l'on peut consulter dans les répertoires `./modules/azure` et `./modules/aws`.
 
 ## Déployer les deux nouveaux modules
 
@@ -129,7 +129,7 @@ Un changement dans la configuration de Terraform implique de *réinitialiser* sa
 
 ... et accepter la copie du fichier local vers le backend remote.
 
-Désormais, le fichier Terraform State est stocké sur le backend remote tel que configuré dans le block `terraform {...}` fu fichier `terraform.tf`.
+Désormais, le fichier Terraform State est stocké sur le backend remote tel que configuré dans le block `terraform {...}` du fichier `terraform.tf`.
 
 ## Lecture du fichier Terraform State sur le backend remote
 Lire les variables de sortie depuis le backend remote.
