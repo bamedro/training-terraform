@@ -8,10 +8,9 @@ Terraform s'utilise depuis une *console*, avec des commandes Shell.
 Ainsi, la méthode la plus simple est d'ouvrir un Cloud Shell sur le cloud utilisé.
 Il est également possible d'utiliser une console sur sa machine locale, connectée au cloud.
 
-Cloner ce dépôt sur votre environnement (Cloud Shell ou machine locale) et se rendre dans le répertoire du cloud utilisé (./azure ou ./aws)
+Cloner ce dépôt sur votre environnement (Cloud Shell ou machine locale)
 ```
 git clone https://github.com/bamedro/training-terraform
-cd training-terraform/aws_ou_azure
 ```
 
 ## Installer Terraform avec TFEnv (recommandé)
@@ -27,7 +26,7 @@ mkdir ~/bin
 ln -s ~/.tfenv/bin/* ~/bin/     # Mettre à jour sa variable PATH si besoin
 ```
 
-S'assurer de bien être dans le répertoire ./azure ou ./aws et installer lancer l'installation de Terraform via la command `tfenv`.
+S'assurer de bien être à la raçine du dépôt `training-terraform` et installer lancer l'installation de Terraform via la command `tfenv`.
 Cette commande va consulter le fichier `.terraform-version` présent à la raçine du dépôt pour installer la bonne version de Terraform. 
 ```
 tfenv install
