@@ -119,9 +119,9 @@ Il est possible (et souvent recommandé) d'héberger le fichier Terraform State 
 Il n'est pas recommandé de stocker le fichier Terraform State dans un dépôt Git, avec les manifests.
 
 ## Copie du fichier Terraform State local sur un backend remote
-Décommenter du bloc `terraform {...}` du fichier main.tf et mettre à jour les valeurs avec le `platform_code` que vous avez utilisé dans l'exercice 1.
+Dans le fichier `terraform.tf`, décommenter le bloc `terraform {...}` et mettre à jour les valeurs avec le `platform_code` utilisé dans l'exercice 1.
 
-Relancer la commande :
+Un changement dans la configuration de Terraform implique de *réinitialiser* sa configuration. Pour ce faire, relancer la commande :
 
 ```bash
   terraform init
