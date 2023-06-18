@@ -165,6 +165,15 @@ Documentation de référence : https://registry.terraform.io/providers/hashicorp
 
 Terraform peut détruire l'infrastructure qu'il a déployé. Cependant, certaines ressources comme le stockage des fichiers Terraform State ne sont pas détruites dans la configuration par défaut, il faut donc parfois passer par une étape de préparation à la destruction.
 
+Dans les module tf_backend (aussi bien pour azure que aws), il faut :
+- modifier la configuration du stockage pour permettre de le supprimer bien qu'il ne soit pas vide (il contient le fichier Terraform State)
+- appliquer cette modification avec `apply`
+
+Ensuite, on peut supprimer toute l'infrastructure, y compris le stockage du backend.
+
 ```bash
 terraform destroy -var-file="dev.tfvars"
 ```
+
+Cette commande se terminera par une erreur, car Terraform ne sera pas en mesure de sauvegarder le nouvel état de l'infrastructure.
+Pour éviter l'erreur, il faudra modifier la configuration du backend pour revenir sur une approche locale au préalable.
